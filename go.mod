@@ -1,4 +1,4 @@
-module github.com/blendle/zapdriver
+module github.com/simprints/zapdriver
 
 go 1.13
 
