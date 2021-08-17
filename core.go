@@ -79,17 +79,26 @@ func (c *core) With(fields []zap.Field) zapcore.Core {
 	var lbls *labels
 	lbls, fields = c.extractLabels(fields)
 
-	lbls.mutex.RLock()
-	c.permLabels.mutex.Lock()
-	for k, v := range lbls.store {
-		c.permLabels.store[k] = v
+	permLabelsCopy := newLabels()
+	permLabelsCopy.mutex.Lock()
+
+	c.permLabels.mutex.RLock()
+	for k, v := range c.permLabels.store {
+		permLabelsCopy.store[k] = v
 	}
-	c.permLabels.mutex.Unlock()
+	c.permLabels.mutex.RUnlock()
+
+	lbls.mutex.RLock()
+	for k, v := range lbls.store {
+		permLabelsCopy.store[k] = v
+	}
 	lbls.mutex.RUnlock()
+
+	permLabelsCopy.mutex.Unlock()
 
 	return &core{
 		Core:       c.Core.With(fields),
-		permLabels: c.permLabels,
+		permLabels: permLabelsCopy,
 		tempLabels: newLabels(),
 		config:     c.config,
 	}
